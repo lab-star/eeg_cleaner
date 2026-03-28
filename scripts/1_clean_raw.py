@@ -156,6 +156,12 @@ for t_fname in raws:
         continue
     logger.info(f"Loading file {t_fname}")
     t_raw = mne.io.read_raw_fif(t_fname, preload=True)
+    # Mark 'Iz' channel as bad if present, instead of dropping it
+    if "Iz" in t_raw.ch_names:
+        logger.info("Marking channel Iz as bad")
+        # Ensure Iz is treated as EEG and then mark as bad
+        if "Iz" not in t_raw.info["bads"]:
+            t_raw.info["bads"].append("Iz")
 
     logger.info(f"Cleaning {t_fname}")
     # Mark previous bad channels
@@ -165,7 +171,7 @@ for t_fname in raws:
     t_raw.filter(hpass, lpass)
 
     # Plot
-    t_raw.plot(block=True, scalings={"eeg": scaling}, n_channels=args.nchans)
+    # t_raw.plot(block=True, scalings={"eeg": scaling}, n_channels=args.nchans)
 
     # Save new channels
     update_log(t_fname, t_raw)

@@ -181,7 +181,8 @@ for t_fname in epochs:
             eeg=True,
             eog=False,
             stim=False,
-            exclude="bads",
+            # exclude mastoids and bad channels from PCA
+            exclude=["bads", "A1", "A2"],
         )
         pca_data = pca.fit_transform(t_epochs.get_data()[:, picks, :])
         blank = np.zeros((pca_data.shape[0], 2, pca_data.shape[2]))
@@ -201,10 +202,19 @@ for t_fname in epochs:
             )
         )
         pca_info.rename_channels(rename)
+
         pca_epochs = mne.EpochsArray(pca_data, pca_info)
-        t_epochs.add_channels([pca_epochs])
+
+        # Use force_update_info so that metadata (incl. custom_ref_applied)
+        # comes from the original t_epochs.info, avoiding merge conflicts.
+        t_epochs.add_channels([pca_epochs], force_update_info=True)
     # Plot
-    picks = mne.pick_types(t_epochs.info, eeg=True, misc=True)
+    picks = mne.pick_types(
+        t_epochs.info,
+        eeg=True,
+        misc=True,
+        exclude=["A1", "A2"],
+    )
     t_epochs.plot(
         block=True,
         n_epochs=nepochs,
